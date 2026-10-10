@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  ADMIN
+  TENANT
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum UtilityType {
+  ELECTRICITY
+  WATER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  tenant    Tenant?
+}
+
+model Tenant {
+  id            String         @id @default(cuid())
+  userId        String         @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomNumber    String
+  keycardId     String
+  status        TenantStatus
+  hoursPresent  Float
+  occupancyLogs OccupancyLog[]
+  bills         Bill[]
+}
+
+model Bill {
+  id            String      @id @default(cuid())
+  billingPeriod String
+  utilityType   UtilityType
+  masterAmount  Float
+  roomNumber    String
+  status        String
+  tenantId      String?
+  tenant        Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model OccupancyLog {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  checkInTime   DateTime
+  checkOutTime  DateTime?
+  durationHours Float?
+}
